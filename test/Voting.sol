@@ -3,17 +3,17 @@ pragma solidity ^0.8.13;
 
 import {Test, console2} from "forge-std/Test.sol";
 import {Voting} from "../src/Voting.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract VotingTest is Test {
-
     Voting votingContract;
+    address[] uniqueCandidates;
 
     function setUp() public {
         votingContract = new Voting();
     }
 
-    function testRegisterAsCandidateSuccessfully() public{
-        address candidate = address(0x1);
+    function testRegisterAsCandidateSuccessfully(address candidate) public {
         votingContract.registerAsCandidate(candidate);
         assertEq(votingContract.tally(candidate), 0);
         assertEq(votingContract.candidates(0), candidate);
@@ -34,17 +34,45 @@ contract VotingTest is Test {
         votingContract.registerAsCandidate(candidate4);
     }
 
-    function testVoteToACandidateThatHasNotRegistered() public {
-        address candidate = address(0x1);
+    function testVoteToACandidateThatHasNotRegistered(
+        address candidate
+    ) public {
         vm.expectRevert("Candidate not found");
         votingContract.vote(candidate);
     }
 
-    function testVotingSuccessfully() public {
-        address candidate = address(0x1);
+    function testVotingSuccessfully(address candidate) public {
         votingContract.registerAsCandidate(candidate);
         votingContract.vote(candidate);
         assertEq(votingContract.tally(candidate), 1);
+        assertEq(votingContract.getParticipants(0), address(this));
+    }
+
+    function testManyVotingSuccessfully(
+        address[] memory candidates,
+        address[] memory participants
+    ) public {
+        if (candidates.length == 0) return;
+        for (uint256 i = 0; i < candidates.length; i++) {
+            // might have duplicates, which we ignore the revert
+            try votingContract.registerAsCandidate(candidates[i]) {
+                uniqueCandidates.push(candidates[i]);
+            } catch {}
+        }
+        uint256 numberOfUniqueParticipants = 0;
+        for (uint256 i = 0; i < participants.length; i++) {
+            vm.startPrank(participants[i]);
+            try votingContract.vote(candidates[i % candidates.length]) {
+                numberOfUniqueParticipants++;
+            } catch {}
+        }
+        uint totalVotes = 0;
+        for (uint256 i = 0; i < uniqueCandidates.length; i++) {
+            totalVotes += votingContract.tally(uniqueCandidates[i]);
+        }
+        assertEq(totalVotes, numberOfUniqueParticipants);
+        // vm.startPrank(address(this)); // owner
+        // assertEq(votingContract.getParticipantsLength(), numberOfUniqueParticipants);
     }
 
     function testReparticipation() public {
@@ -69,5 +97,23 @@ contract VotingTest is Test {
         votingContract.changeVote(candidate2);
         assertEq(votingContract.tally(candidate), 0);
         assertEq(votingContract.tally(candidate2), 1);
+    }
+
+    function testNonOwnerGetParticipants() public {
+        address nonOwner = address(0x1);
+        vm.startPrank(nonOwner);
+        vm.expectRevert();
+        votingContract.getParticipants(0);
+    }
+
+    function testNonOwnerGetParticipantsLength() public {
+        address nonOwner = address(0x1);
+        vm.startPrank(nonOwner);
+        vm.expectRevert();
+        votingContract.getParticipantsLength();
+    }
+
+    function testOwnerGetParticipantsLength() public {
+        assertEq(votingContract.getParticipantsLength(), 0);
     }
 }

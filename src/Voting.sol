@@ -3,10 +3,13 @@ pragma solidity ^0.8.13;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract Voting {
+contract Voting is Ownable{
     address[] public candidates;
     mapping(address => address) public votes;
+    address[] private participants;
     mapping(address => uint256) public tally;
+
+    constructor() Ownable(msg.sender) {}
 
     function registerAsCandidate(address candidate) public {
         require(!isRegistered(candidate), "Already registered");
@@ -28,6 +31,7 @@ contract Voting {
         require(votes[msg.sender] == address(0), "Participant has voted before");
         votes[msg.sender] = candidate;
         tally[candidate] += 1;
+        participants.push(msg.sender);
     }
 
     function changeVote(address candidate) public{
@@ -35,6 +39,14 @@ contract Voting {
         tally[votes[msg.sender]] -= 1;
         votes[msg.sender] = candidate;
         tally[candidate] += 1;
+    }
+
+    function getParticipants(uint256 index) public view onlyOwner returns(address) {
+        return participants[index];
+    }
+
+    function getParticipantsLength() public view onlyOwner returns(uint256) {
+        return participants.length;
     }
 
 }
