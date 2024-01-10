@@ -48,7 +48,7 @@ contract VotingTest is Test {
         assertEq(votingContract.getParticipants(0), address(this));
     }
 
-    function testManyVotingSuccessfully(
+    function testFuzzVotingSuccessfully(
         address[] memory candidates,
         address[] memory participants
     ) public {
