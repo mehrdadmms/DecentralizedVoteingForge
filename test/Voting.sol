@@ -80,7 +80,7 @@ contract VotingTest is Test {
 
     function testChangingVoteWithoutVotingFirst() public {
         address candidate = address(0x1);
-        vm.expectRevert("Participant hadn't vote");
+        vm.expectRevert("Participant hadn't voted");
         votingContract.changeVote(candidate);
     }
 
