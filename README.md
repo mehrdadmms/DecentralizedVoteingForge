@@ -22,14 +22,18 @@ Create a smart contract for a decentralized voting system using Solidity and Fou
 ## Usage
 
 ### Build
-
 ```shell
 $ forge build
 ```
 
 ### Test
-
 ```shell
 $ forge test --ffi
+```
+
+### Coverage
+```shell
+$ brew install lcov
+$ forge coverage --ffi --report lcov && genhtml lcov.info --branch-coverage --output-dir coverage
 ```
 

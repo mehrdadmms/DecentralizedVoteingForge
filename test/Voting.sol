@@ -132,7 +132,25 @@ contract VotingTest is Test {
         // votingContract.vote(candidate);
     }
 
-    function invariant_totalVotesDoNotExceedParticipants() public {
+    function invariantTotalVotesDoNotExceedParticipants() public {
+        assertTrue(votingContract.totalVotesInvariant());
+    }
+
+    function testTotalVotesInvariant(address[] memory candidates, address[] memory participants) public {
+        if (candidates.length == 0) return;
+        for (uint256 i = 0; i < candidates.length; i++) {
+            // might have duplicates, which we ignore the revert
+            try votingContract.registerAsCandidate(candidates[i]) {
+                uniqueCandidates.push(candidates[i]);
+            } catch {}
+        }
+        uint256 numberOfUniqueParticipants = 0;
+        for (uint256 i = 0; i < participants.length; i++) {
+            vm.startPrank(participants[i]);
+            try votingContract.vote(candidates[i % candidates.length]) {
+                numberOfUniqueParticipants++;
+            } catch {}
+        }
         assertTrue(votingContract.totalVotesInvariant());
     }
 }
