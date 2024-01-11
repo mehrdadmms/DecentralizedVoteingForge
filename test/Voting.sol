@@ -131,4 +131,8 @@ contract VotingTest is Test {
         // vm.expectRevert("Voting is not in progress");
         // votingContract.vote(candidate);
     }
+
+    function invariant_totalVotesDoNotExceedParticipants() public {
+        assertTrue(votingContract.totalVotesInvariant());
+    }
 }
