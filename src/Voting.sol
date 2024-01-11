@@ -26,7 +26,15 @@ contract Voting is Ownable{
         return false;
     }
 
+
+    function oracleCallForCheckingIsVotingInProgress() public pure returns(bool) {
+        // for simplicity I didn't implement the external call and just returned  true
+        // by using FFI, I will override this function and try to test the scenario in which voting has ended.
+        return true;
+    }
+
     function vote(address candidate) public {
+        require(oracleCallForCheckingIsVotingInProgress() == true, "Voting is not in progress");
         require(isRegistered(candidate), "Candidate not found");
         require(votes[msg.sender] == address(0), "Participant has voted before");
         votes[msg.sender] = candidate;
@@ -48,5 +56,6 @@ contract Voting is Ownable{
     function getParticipantsLength() public view onlyOwner returns(uint256) {
         return participants.length;
     }
+
 
 }

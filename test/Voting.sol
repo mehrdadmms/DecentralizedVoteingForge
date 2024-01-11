@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import {Test, console2} from "forge-std/Test.sol";
-import {Voting} from "../src/Voting.sol";
+import { Test, console2 } from "forge-std/Test.sol";
+import { Voting } from "../src/Voting.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract VotingTest is Test {
@@ -34,9 +34,7 @@ contract VotingTest is Test {
         votingContract.registerAsCandidate(candidate4);
     }
 
-    function testVoteToACandidateThatHasNotRegistered(
-        address candidate
-    ) public {
+    function testVoteToACandidateThatHasNotRegistered(address candidate) public {
         vm.expectRevert("Candidate not found");
         votingContract.vote(candidate);
     }
@@ -48,10 +46,7 @@ contract VotingTest is Test {
         assertEq(votingContract.getParticipants(0), address(this));
     }
 
-    function testFuzzVotingSuccessfully(
-        address[] memory candidates,
-        address[] memory participants
-    ) public {
+    function testFuzzVotingSuccessfully(address[] memory candidates, address[] memory participants) public {
         if (candidates.length == 0) return;
         for (uint256 i = 0; i < candidates.length; i++) {
             // might have duplicates, which we ignore the revert
@@ -115,5 +110,25 @@ contract VotingTest is Test {
 
     function testOwnerGetParticipantsLength() public {
         assertEq(votingContract.getParticipantsLength(), 0);
+    }
+
+    function testOracleCallForCheckingIsVotingInProgressReturnsTrue() public {
+        assertTrue(votingContract.oracleCallForCheckingIsVotingInProgress());
+    }
+
+    function testMockingOracleCallForCheckingIsVotingInProgresswithFFI() public {
+        string[] memory inputs = new string[](2);
+        inputs[0] = "node";
+        inputs[1] = "oracle.js";
+        bytes memory oracleResponse = vm.ffi(inputs);
+        bool result = !(keccak256(abi.encodePacked("false")) == keccak256(oracleResponse));
+        vm.mockCall(
+            address(votingContract),
+            abi.encodeWithSelector(votingContract.oracleCallForCheckingIsVotingInProgress.selector),
+            abi.encode(result)
+        );
+        assertFalse(votingContract.oracleCallForCheckingIsVotingInProgress());
+        // vm.expectRevert("Voting is not in progress");
+        // votingContract.vote(candidate);
     }
 }
